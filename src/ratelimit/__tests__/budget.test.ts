@@ -69,6 +69,40 @@ describe("BudgetTracker", () => {
     });
   });
 
+  describe("boundary conditions", () => {
+    it("returns true when under cost limit with headroom", () => {
+      // Budget: $0.50 max, 50000 max tokens
+      // Record 20000 tokens of DeepSeek ($2/1M) = $0.04
+      budget.record("deepseek/deepseek-v3", 20000);
+      // Check 10000 more → total 30000 tokens ($0.06), both under limits
+      expect(budget.canAfford("deepseek/deepseek-v3", 10000)).toBe(true);
+    });
+
+    it("returns false when just over cost limit", () => {
+      // Max cost = $0.50. Record $0.49, then check if something pushes over
+      // DeepSeek: $2/1M → 245000 tokens = $0.49
+      budget.record("deepseek/deepseek-v3", 245000);
+      // 10000 tokens of DeepSeek = $0.02, total $0.51 > $0.50
+      expect(budget.canAfford("deepseek/deepseek-v3", 10000)).toBe(false);
+    });
+
+    it("returns true when exactly at token limit", () => {
+      budget.record("deepseek/deepseek-v3", 48000);
+      expect(budget.canAfford("deepseek/deepseek-v3", 2000)).toBe(true);
+    });
+
+    it("returns false when exceeding both limits", () => {
+      budget.record("anthropic/claude-opus-4-6", 15000); // $0.45, 15000 tokens
+      // 40000 more tokens of Claude = $1.20 cost, 55000 tokens total
+      expect(budget.canAfford("anthropic/claude-opus-4-6", 40000)).toBe(false);
+    });
+
+    it("handles very large token counts", () => {
+      const cost = budget.estimateCost("deepseek/deepseek-v3", 1_000_000_000);
+      expect(cost).toBeCloseTo(2000); // $2/1M * 1B = $2000
+    });
+  });
+
   describe("reset", () => {
     it("clears spent and tokens", () => {
       budget.record("anthropic/claude-opus-4-6", 5000);

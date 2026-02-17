@@ -214,4 +214,60 @@ describe("distributor", () => {
     const results = await distribute("test", opts);
     expect(results[0].durationMs).toBeGreaterThanOrEqual(0);
   });
+
+  it("returns empty array when analysts config is empty", async () => {
+    const opts: DistributorOptions = {
+      analysts: {},
+      rateLimiter,
+      budget,
+      perModelRpm: 10,
+    };
+
+    const results = await distribute("test", opts);
+    expect(results).toEqual([]);
+  });
+
+  it("continues when all analysts fail", async () => {
+    mockCallModel
+      .mockRejectedValueOnce(new Error("fail 1"))
+      .mockRejectedValueOnce(new Error("fail 2"));
+
+    const opts: DistributorOptions = {
+      analysts: {
+        critic: makeAnalystConfig(),
+        strategist: makeAnalystConfig(),
+      },
+      rateLimiter,
+      budget,
+      perModelRpm: 10,
+    };
+
+    const results = await distribute("test", opts);
+    expect(results).toHaveLength(2);
+    expect(results[0].content).toContain("[Error:");
+    expect(results[1].content).toContain("[Error:");
+    // Both should have 0 tokens
+    expect(results[0].tokensUsed).toBe(0);
+    expect(results[1].tokensUsed).toBe(0);
+  });
+
+  it("preserves order matching analysts config", async () => {
+    mockCallModel
+      .mockResolvedValueOnce({ content: "first", tokensUsed: 100 })
+      .mockResolvedValueOnce({ content: "second", tokensUsed: 200 });
+
+    const opts: DistributorOptions = {
+      analysts: {
+        critic: makeAnalystConfig({ label: "The Critic" }),
+        strategist: makeAnalystConfig({ label: "The Strategist" }),
+      },
+      rateLimiter,
+      budget,
+      perModelRpm: 10,
+    };
+
+    const results = await distribute("test", opts);
+    expect(results[0].role).toBe("critic");
+    expect(results[1].role).toBe("strategist");
+  });
 });

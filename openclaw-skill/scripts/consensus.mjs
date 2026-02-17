@@ -30,7 +30,7 @@ if (!values.prompt) {
   process.exit(1);
 }
 
-const apiKey = process.env.OPENROUTER_API_KEY;
+const apiKey = process.env.OPENROUTER_API_KEY?.trim();
 if (!apiKey) {
   console.error(
     JSON.stringify({

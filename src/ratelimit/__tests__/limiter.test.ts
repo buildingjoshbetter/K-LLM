@@ -57,4 +57,38 @@ describe("RateLimiter", () => {
     vi.advanceTimersByTime(61000);
     await limiter.acquire("model-a", 1);
   });
+
+  it("throws on perModelRpm of 0", async () => {
+    const limiter = new RateLimiter(0, 30);
+    await expect(limiter.acquire("model-a", 0)).rejects.toThrow(
+      "Rate limit RPM is 0"
+    );
+  });
+
+  it("throws on globalRpm of 0 after burst", async () => {
+    // Global bucket has 0 tokens and 0 refill rate
+    const limiter = new RateLimiter(10, 0);
+    await expect(limiter.acquire("model-a", 10)).rejects.toThrow(
+      "Rate limit RPM is 0"
+    );
+  });
+
+  it("serializes concurrent acquires to prevent negative tokens", async () => {
+    const limiter = new RateLimiter(2, 30);
+
+    // Acquire both tokens
+    await limiter.acquire("model-a", 2);
+    await limiter.acquire("model-a", 2);
+
+    // Two concurrent acquires on an empty bucket -- both should wait,
+    // not both see 1 token and both decrement
+    const p1 = limiter.acquire("model-a", 2);
+    const p2 = limiter.acquire("model-a", 2);
+
+    // Advance time enough for 2 tokens to refill
+    vi.advanceTimersByTime(120000);
+
+    await Promise.all([p1, p2]);
+    // If this resolves without error, serialization is working
+  });
 });

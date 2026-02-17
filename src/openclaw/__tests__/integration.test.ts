@@ -56,9 +56,29 @@ describe("OpenClaw skill integration", () => {
       expect(frontmatter).toContain("k-llm");
     });
 
-    it("has openclaw metadata with emoji", () => {
-      expect(frontmatter).toContain("openclaw");
+    it("uses clawdbot metadata key (not openclaw)", () => {
+      expect(frontmatter).toContain('"clawdbot"');
+      expect(frontmatter).not.toContain('"openclaw"');
+    });
+
+    it("has clawdbot metadata with emoji", () => {
+      expect(frontmatter).toContain("clawdbot");
       expect(frontmatter).toContain("emoji");
+    });
+
+    it("declares files for security scanning", () => {
+      expect(frontmatter).toContain('files:');
+      expect(frontmatter).toContain('scripts/*');
+    });
+
+    it("metadata is single-line JSON (OpenClaw parser requirement)", () => {
+      const metadataLine = frontmatter
+        .split("\n")
+        .find((l) => l.startsWith("metadata:"));
+      expect(metadataLine).toBeDefined();
+      // Should be exactly one line containing the full JSON
+      expect(metadataLine).toContain("{");
+      expect(metadataLine).toContain("}");
     });
 
     it("body references the consensus script with {baseDir}", () => {

@@ -116,10 +116,11 @@ async function main(): Promise<void> {
 
     apiKey = await new Promise<string>((resolve) => {
       rl.question("  OpenRouter API Key: ", (answer) => {
-        rl.close();
         resolve(answer.trim());
       });
     });
+
+    rl.close();
 
     if (!apiKey) {
       console.error("\n  No API key provided. Exiting.");
@@ -143,6 +144,12 @@ async function main(): Promise<void> {
   });
 
   console.log("Ready. Type your prompt and press Enter. Type 'quit' to exit.\n");
+
+  process.on("SIGINT", () => {
+    console.log("\nGoodbye!");
+    rl.close();
+    process.exit(0);
+  });
 
   const ask = (): void => {
     rl.question("You: ", async (input) => {

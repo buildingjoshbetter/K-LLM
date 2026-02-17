@@ -160,4 +160,80 @@ describe("pipeline", () => {
     ]);
   });
 
+  it("works without callbacks", async () => {
+    // Reset mock implementations to defaults (callbacks test overrides them)
+    mockDistribute.mockResolvedValue([
+      {
+        role: "critic",
+        label: "The Critic",
+        icon: "🔍",
+        model: "anthropic/claude-opus-4-6",
+        content: "Critical analysis",
+        tokensUsed: 400,
+        durationMs: 1200,
+      },
+      {
+        role: "strategist",
+        label: "The Strategist",
+        icon: "📐",
+        model: "openai/gpt-5.2",
+        content: "Strategic analysis",
+        tokensUsed: 350,
+        durationMs: 1100,
+      },
+    ]);
+    mockSynthesize.mockResolvedValue({
+      content: "Synthesized consensus response",
+      tokensUsed: 800,
+      durationMs: 2000,
+    });
+
+    const result = await runConsensus("test", testConfig);
+    expect(result.prompt).toBe("test");
+    expect(result.analyses).toHaveLength(2);
+    expect(result.synthesis.content).toBeDefined();
+  });
+
+  it("handles empty analysts returning empty array from distribute", async () => {
+    mockDistribute.mockResolvedValueOnce([]);
+    mockSynthesize.mockResolvedValueOnce({
+      content: "[Synthesis error: No valid analyst responses to synthesize]",
+      tokensUsed: 0,
+      durationMs: 1,
+    });
+
+    const result = await runConsensus("test", testConfig);
+
+    expect(result.analyses).toEqual([]);
+    expect(result.totalTokens).toBe(0);
+    expect(result.synthesis.content).toContain("No valid analyst responses");
+  });
+
+  it("passes synthesizer config to synthesize", async () => {
+    await runConsensus("test", testConfig);
+
+    expect(mockSynthesize).toHaveBeenCalledOnce();
+    const [, , opts] = mockSynthesize.mock.calls[0];
+    expect(opts.config).toBe(testConfig.synthesizer);
+    expect(opts.perModelRpm).toBe(10);
+  });
+
+  it("calculates estimatedCost from budget tracker", async () => {
+    const result = await runConsensus("test", testConfig);
+    // estimatedCost comes from budget.getSpent() which is 0 in mocked scenario
+    expect(typeof result.estimatedCost).toBe("number");
+    expect(result.estimatedCost).toBeGreaterThanOrEqual(0);
+  });
+
+  it("handles distribute throwing an error", async () => {
+    mockDistribute.mockRejectedValueOnce(new Error("distribute failed"));
+
+    await expect(runConsensus("test", testConfig)).rejects.toThrow("distribute failed");
+  });
+
+  it("handles synthesize throwing an error", async () => {
+    mockSynthesize.mockRejectedValueOnce(new Error("synthesis failed"));
+
+    await expect(runConsensus("test", testConfig)).rejects.toThrow("synthesis failed");
+  });
 });

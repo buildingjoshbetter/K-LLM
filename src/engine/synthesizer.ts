@@ -31,9 +31,23 @@ export async function synthesize(
   opts.onProgress?.("start");
   const start = Date.now();
 
+  const validAnalyses = analyses.filter(
+    (a) => a.content && !a.content.startsWith("[Skipped:") && !a.content.startsWith("[Error:")
+  );
+
+  if (validAnalyses.length === 0) {
+    const durationMs = Date.now() - start;
+    opts.onProgress?.("done", durationMs);
+    return {
+      content: "[Synthesis error: No valid analyst responses to synthesize]",
+      tokensUsed: 0,
+      durationMs,
+    };
+  }
+
   await opts.rateLimiter.acquire(opts.config.model, opts.perModelRpm);
 
-  const userPrompt = buildSynthesisPrompt(originalPrompt, analyses);
+  const userPrompt = buildSynthesisPrompt(originalPrompt, validAnalyses);
 
   try {
     const { content, tokensUsed } = await callModel(

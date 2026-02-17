@@ -1,7 +1,8 @@
 ---
 name: k-llm
 description: "Multi-model consensus engine. Routes your prompt to 5 AI models (Claude, GPT, DeepSeek, Llama, Gemini), each analyzing through its native strength, then synthesizes all 5 into one authoritative answer. Use when you want thorough, multi-perspective analysis on any question."
-metadata: { "openclaw": { "emoji": "🧠", "primaryEnv": "OPENROUTER_API_KEY", "requires": { "bins": ["node"], "env": ["OPENROUTER_API_KEY"] } } }
+metadata: { "clawdbot": { "emoji": "🧠", "primaryEnv": "OPENROUTER_API_KEY", "requires": { "bins": ["node"], "env": ["OPENROUTER_API_KEY"] } } }
+files: ["scripts/*"]
 user-invocable: true
 triggers:
   - consensus

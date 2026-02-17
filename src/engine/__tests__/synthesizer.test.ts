@@ -171,4 +171,134 @@ describe("synthesizer", () => {
     const userPrompt: string = mockCallModel.mock.calls[0][2];
     expect(userPrompt).toContain("anthropic/claude-opus-4-6");
   });
+
+  it("returns early when all analyses are skipped", async () => {
+    const analyses = [
+      makeAnalystResult({ content: "[Skipped: budget exceeded]", tokensUsed: 0 }),
+      makeAnalystResult({ role: "strategist", content: "[Skipped: budget exceeded]", tokensUsed: 0 }),
+    ];
+
+    const opts: SynthesizerOptions = {
+      config: synthConfig,
+      rateLimiter,
+      budget,
+      perModelRpm: 10,
+    };
+
+    const result = await synthesize("test", analyses, opts);
+
+    expect(result.content).toBe("[Synthesis error: No valid analyst responses to synthesize]");
+    expect(result.tokensUsed).toBe(0);
+    expect(mockCallModel).not.toHaveBeenCalled();
+  });
+
+  it("returns early when all analyses are errors", async () => {
+    const analyses = [
+      makeAnalystResult({ content: "[Error: API rate limit]", tokensUsed: 0 }),
+      makeAnalystResult({ role: "strategist", content: "[Error: timeout]", tokensUsed: 0 }),
+    ];
+
+    const opts: SynthesizerOptions = {
+      config: synthConfig,
+      rateLimiter,
+      budget,
+      perModelRpm: 10,
+    };
+
+    const result = await synthesize("test", analyses, opts);
+
+    expect(result.content).toBe("[Synthesis error: No valid analyst responses to synthesize]");
+    expect(result.tokensUsed).toBe(0);
+    expect(mockCallModel).not.toHaveBeenCalled();
+  });
+
+  it("filters out skipped analyses but synthesizes valid ones", async () => {
+    const analyses = [
+      makeAnalystResult({ role: "critic", content: "Good analysis here" }),
+      makeAnalystResult({ role: "strategist", content: "[Skipped: budget exceeded]", tokensUsed: 0 }),
+    ];
+
+    const opts: SynthesizerOptions = {
+      config: synthConfig,
+      rateLimiter,
+      budget,
+      perModelRpm: 10,
+    };
+
+    await synthesize("test", analyses, opts);
+
+    expect(mockCallModel).toHaveBeenCalledOnce();
+    const userPrompt: string = mockCallModel.mock.calls[0][2];
+    expect(userPrompt).toContain("Good analysis here");
+    expect(userPrompt).not.toContain("[Skipped:");
+  });
+
+  it("filters out errored analyses but synthesizes valid ones", async () => {
+    const analyses = [
+      makeAnalystResult({ role: "critic", content: "[Error: timeout]", tokensUsed: 0 }),
+      makeAnalystResult({ role: "strategist", content: "Strategic insight" }),
+    ];
+
+    const opts: SynthesizerOptions = {
+      config: synthConfig,
+      rateLimiter,
+      budget,
+      perModelRpm: 10,
+    };
+
+    await synthesize("test", analyses, opts);
+
+    expect(mockCallModel).toHaveBeenCalledOnce();
+    const userPrompt: string = mockCallModel.mock.calls[0][2];
+    expect(userPrompt).toContain("Strategic insight");
+    expect(userPrompt).not.toContain("[Error:");
+  });
+
+  it("returns early for empty analyses array", async () => {
+    const opts: SynthesizerOptions = {
+      config: synthConfig,
+      rateLimiter,
+      budget,
+      perModelRpm: 10,
+    };
+
+    const result = await synthesize("test", [], opts);
+
+    expect(result.content).toBe("[Synthesis error: No valid analyst responses to synthesize]");
+    expect(result.tokensUsed).toBe(0);
+    expect(mockCallModel).not.toHaveBeenCalled();
+  });
+
+  it("fires onProgress even when returning early with no valid analyses", async () => {
+    const events: string[] = [];
+
+    const opts: SynthesizerOptions = {
+      config: synthConfig,
+      rateLimiter,
+      budget,
+      perModelRpm: 10,
+      onProgress: (status) => events.push(status),
+    };
+
+    await synthesize("test", [], opts);
+
+    expect(events).toContain("start");
+    expect(events).toContain("done");
+  });
+
+  it("handles non-Error throws gracefully", async () => {
+    mockCallModel.mockRejectedValueOnce("string rejection");
+
+    const opts: SynthesizerOptions = {
+      config: synthConfig,
+      rateLimiter,
+      budget,
+      perModelRpm: 10,
+    };
+
+    const result = await synthesize("test", [makeAnalystResult()], opts);
+
+    expect(result.content).toBe("[Synthesis error: string rejection]");
+    expect(result.tokensUsed).toBe(0);
+  });
 });
