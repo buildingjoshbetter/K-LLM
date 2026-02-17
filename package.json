@@ -1,0 +1,36 @@
+{
+  "name": "x-llm",
+  "version": "1.0.0",
+  "description": "Multi-model consensus engine — 5 AI models analyze your prompt through their native strengths, then one synthesizes the result.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "x-llm": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "api": "tsx src/api/server.ts"
+  },
+  "keywords": [
+    "ai",
+    "llm",
+    "consensus",
+    "multi-model",
+    "openclaw",
+    "openrouter"
+  ],
+  "author": "Josh Adler",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.0",
+    "openai": "^4.80.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

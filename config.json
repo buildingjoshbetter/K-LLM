@@ -1,0 +1,56 @@
+{
+  "analysts": {
+    "critic": {
+      "model": "anthropic/claude-opus-4-6",
+      "maxTokens": 2000,
+      "label": "The Critic",
+      "icon": "🔍",
+      "description": "Finds flaws, challenges assumptions, identifies risks"
+    },
+    "strategist": {
+      "model": "openai/gpt-5.2",
+      "maxTokens": 2000,
+      "label": "The Strategist",
+      "icon": "📐",
+      "description": "Big-picture frameworks, second-order effects, long-term analysis"
+    },
+    "technician": {
+      "model": "deepseek/deepseek-v3",
+      "maxTokens": 2000,
+      "label": "The Technician",
+      "icon": "⚙️",
+      "description": "Implementation details, technical feasibility, code-level analysis"
+    },
+    "creative": {
+      "model": "meta-llama/llama-4-maverick",
+      "maxTokens": 2000,
+      "label": "The Creative",
+      "icon": "💡",
+      "description": "Divergent thinking, unconventional angles, reframing"
+    },
+    "pragmatist": {
+      "model": "google/gemini-2.5-pro",
+      "maxTokens": 2000,
+      "label": "The Pragmatist",
+      "icon": "🎯",
+      "description": "Real-world applicability, actionable steps, ROI analysis"
+    }
+  },
+  "synthesizer": {
+    "model": "openai/gpt-5.2-pro",
+    "maxTokens": 4000,
+    "label": "Synthesizer",
+    "description": "Cross-family synthesis — different model from any analyst"
+  },
+  "rateLimits": {
+    "perModelRpm": 10,
+    "globalRpm": 30,
+    "maxTokensPerCycle": 50000,
+    "maxCostPerCycle": 0.50
+  },
+  "output": {
+    "showIndividualAnalyses": false,
+    "showCostBreakdown": true,
+    "showTimings": true
+  }
+}
