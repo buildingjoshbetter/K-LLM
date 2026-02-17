@@ -79,13 +79,13 @@ On first run, K-LLM will introduce itself and ask for your OpenRouter API key. I
 
 ### OpenClaw Skill
 
-If you're running [OpenClaw](https://openclaw.ai):
+Copy the `openclaw-skill/` folder into your OpenClaw skills directory:
 
 ```bash
-openclaw skills install ./openclaw-skill
+cp -r openclaw-skill ~/.openclaw/skills/k-llm
 ```
 
-Then in any OpenClaw chat:
+Make sure you've built the project first (`npm run build`) and set your `OPENROUTER_API_KEY` environment variable. Then in any OpenClaw chat:
 
 ```
 consensus Should I raise a seed round or bootstrap my SaaS?
@@ -218,10 +218,11 @@ K-LLM/
     api/
       server.ts           REST API server
     openclaw/
-      skill.ts            OpenClaw skill wrapper
+      skill.ts            OpenClaw skill wrapper (internal)
   openclaw-skill/
-    manifest.json         OpenClaw skill manifest
-    handler.ts            Skill entry point
+    SKILL.md              OpenClaw skill definition (YAML + instructions)
+    scripts/
+      consensus.mjs       Executable script called by OpenClaw agent
   config.json             Model and rate limit configuration
 ```
 
