@@ -31,7 +31,7 @@ async function runAnalyst(
       label: config.label,
       icon: config.icon,
       model: config.model,
-      content: "[Skipped — budget exceeded]",
+      content: "[Skipped: budget exceeded]",
       tokensUsed: 0,
       durationMs,
     };

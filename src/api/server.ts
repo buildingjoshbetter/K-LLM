@@ -82,7 +82,7 @@ app.post("/consensus", async (req, res) => {
 
 const PORT = parseInt(process.env.PORT || "3147", 10);
 app.listen(PORT, () => {
-  console.log(`X-LLM API running on http://localhost:${PORT}`);
+  console.log(`K-LLM API running on http://localhost:${PORT}`);
   console.log("Endpoints:");
   console.log("  GET  /health     - Health check");
   console.log("  GET  /models     - List analyst models and roles");

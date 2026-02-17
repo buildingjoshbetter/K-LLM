@@ -1,5 +1,5 @@
 /**
- * OpenClaw Skill Integration for X-LLM
+ * OpenClaw Skill Integration for K-LLM
  *
  * This module exports the consensus engine as an OpenClaw-compatible skill.
  * Install by copying the openclaw-skill/ directory to your OpenClaw skills folder

@@ -20,7 +20,7 @@ export const ROLE_PROMPTS: Record<string, string> = {
   pragmatist: PRAGMATIST_SYSTEM_PROMPT,
 };
 
-export const SYNTHESIS_SYSTEM_PROMPT = `You are the Synthesizer in X-LLM, a multi-model consensus engine.
+export const SYNTHESIS_SYSTEM_PROMPT = `You are the Synthesizer in K-LLM, a multi-model consensus engine.
 
 You will receive analyses from 5 different AI models, each analyzing the same prompt through a different lens:
 - The Critic: Found flaws, risks, and weak assumptions

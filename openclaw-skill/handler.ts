@@ -1,5 +1,5 @@
 /**
- * OpenClaw Skill Handler for X-LLM
+ * OpenClaw Skill Handler for K-LLM
  *
  * This is the entry point that OpenClaw calls when the skill is triggered.
  * It wraps the core consensus engine with OpenClaw's skill interface.
@@ -29,14 +29,14 @@ export default async function handler(ctx: OpenClawSkillContext): Promise<void> 
 
   if (!prompt) {
     await ctx.reply(
-      "Hey! I'm X-LLM — a multi-model consensus engine.\n\n" +
+      "Hey! I'm K-LLM, a multi-model consensus engine.\n\n" +
         "I take your prompt and route it to 5 AI models, each analyzing " +
         "through the lens it's natively best at:\n\n" +
-        "🔍 The Critic (Claude Opus 4.6) — finds flaws & risks\n" +
-        "📐 The Strategist (GPT-5.2) — big-picture frameworks\n" +
-        "⚙️ The Technician (DeepSeek V3) — technical feasibility\n" +
-        "💡 The Creative (Llama 4 Maverick) — unconventional angles\n" +
-        "🎯 The Pragmatist (Gemini 2.5 Pro) — actionable reality\n\n" +
+        "🔍 The Critic (Claude Opus 4.6) - finds flaws & risks\n" +
+        "📐 The Strategist (GPT-5.2) - big-picture frameworks\n" +
+        "⚙️ The Technician (DeepSeek V3) - technical feasibility\n" +
+        "💡 The Creative (Llama 4 Maverick) - unconventional angles\n" +
+        "🎯 The Pragmatist (Gemini 2.5 Pro) - actionable reality\n\n" +
         "Then a separate synthesizer (GPT-5.2 Pro) fuses all 5 into one answer.\n\n" +
         "To get started, please provide your OpenRouter API key.\n" +
         "Get one at: https://openrouter.ai/keys\n\n" +

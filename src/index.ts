@@ -8,7 +8,7 @@ import type { Config } from "./models/types.js";
 
 const BANNER = `
 ╔══════════════════════════════════════════════╗
-║  X-LLM Consensus Engine v1.0               ║
+║  K-LLM Consensus Engine v1.0               ║
 ║  5 models. 5 lenses. 1 answer.             ║
 ╚══════════════════════════════════════════════╝
 `;
@@ -27,7 +27,7 @@ function loadConfig(): Config {
   if (fs.existsSync(fallback)) {
     return JSON.parse(fs.readFileSync(fallback, "utf-8"));
   }
-  console.error("config.json not found. Run from the X-LLM directory.");
+  console.error("config.json not found. Run from the K-LLM directory.");
   process.exit(1);
 }
 
@@ -98,7 +98,7 @@ async function main(): Promise<void> {
   console.log(BANNER);
 
   if (!apiKey) {
-    console.log("Welcome to X-LLM! Here's what I can do:\n");
+    console.log("Welcome to K-LLM! Here's what I can do:\n");
     console.log("  I take your prompt and route it to 5 AI models,");
     console.log("  each analyzing through the lens it's natively best at:\n");
     for (const [, info] of Object.entries(config.analysts)) {

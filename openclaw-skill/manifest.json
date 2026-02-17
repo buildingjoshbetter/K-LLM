@@ -1,9 +1,9 @@
 {
-  "name": "x-llm",
+  "name": "k-llm",
   "version": "1.0.0",
-  "description": "Multi-model consensus engine — 5 AI models analyze your prompt through their native strengths, then one synthesizes the result.",
+  "description": "Multi-model consensus engine. 5 AI models analyze your prompt through their native strengths, then one synthesizes the result.",
   "author": "Josh Adler",
-  "homepage": "https://github.com/buildingjoshbetter/X-LLM",
+  "homepage": "https://github.com/buildingjoshbetter/K-LLM",
   "license": "MIT",
   "skills": [
     {
@@ -13,7 +13,7 @@
         "consensus",
         "analyze this",
         "multi-model",
-        "x-llm",
+        "k-llm",
         "5 perspectives"
       ],
       "parameters": {

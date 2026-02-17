@@ -7,7 +7,7 @@ export function initProvider(apiKey: string): void {
     baseURL: "https://openrouter.ai/api/v1",
     apiKey,
     defaultHeaders: {
-      "X-Title": "X-LLM Consensus Engine",
+      "X-Title": "K-LLM Consensus Engine",
     },
   });
 }

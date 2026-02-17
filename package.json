@@ -1,11 +1,11 @@
 {
-  "name": "x-llm",
+  "name": "k-llm",
   "version": "1.0.0",
-  "description": "Multi-model consensus engine — 5 AI models analyze your prompt through their native strengths, then one synthesizes the result.",
+  "description": "Multi-model consensus engine. 5 AI models analyze your prompt through their native strengths, then one synthesizes the result.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "x-llm": "dist/index.js"
+    "k-llm": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
