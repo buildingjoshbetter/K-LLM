@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/k-llm-logo.svg" alt="K-LLM" width="120" />
+  <img src="assets/k-llm-logo.png" alt="K-LLM" width="120" />
 </p>
 
 <h1 align="center">K-LLM</h1>
