@@ -104,9 +104,54 @@ function formatAnalyses(analyses, config) {
   return lines.join("\n");
 }
 
+// --- Replace ## headers with context-relevant emojis ---
+const HEADER_EMOJIS = {
+  "consensus response": "\u2728",
+  "consensus": "\u2728",
+  "summary": "\u2728",
+  "key points of agreement": "\u{1F91D}",
+  "agreement": "\u{1F91D}",
+  "points of agreement": "\u{1F91D}",
+  "common ground": "\u{1F91D}",
+  "points of divergence": "\u2696\uFE0F",
+  "divergence": "\u2696\uFE0F",
+  "disagreements": "\u2696\uFE0F",
+  "areas of disagreement": "\u2696\uFE0F",
+  "recommended action": "\u{1F680}",
+  "recommendation": "\u{1F680}",
+  "recommendations": "\u{1F680}",
+  "next steps": "\u{1F680}",
+  "action items": "\u{1F680}",
+  "key takeaway": "\u{1F4A1}",
+  "key takeaways": "\u{1F4A1}",
+  "takeaways": "\u{1F4A1}",
+  "risks": "\u26A0\uFE0F",
+  "concerns": "\u26A0\uFE0F",
+  "caveats": "\u26A0\uFE0F",
+  "limitations": "\u26A0\uFE0F",
+  "technical details": "\u2699\uFE0F",
+  "implementation": "\u2699\uFE0F",
+  "context": "\u{1F4CB}",
+  "background": "\u{1F4CB}",
+  "analysis": "\u{1F50D}",
+  "overview": "\u{1F30D}",
+  "conclusion": "\u2705",
+  "final answer": "\u2705",
+  "bottom line": "\u2705",
+};
+
+function replaceHeaders(text) {
+  return text.replace(/^##\s+(.+)$/gm, (match, heading) => {
+    const key = heading.trim().toLowerCase();
+    const emoji = HEADER_EMOJIS[key] || "\u{1F4CC}";
+    return `${emoji} *${heading.trim()}*`;
+  });
+}
+
 // --- Format synthesis message ---
 function formatSynthesis(synthesis, meta) {
-  const content = synthesis.content?.trim() || "(no synthesis)";
+  let content = synthesis.content?.trim() || "(no synthesis)";
+  content = replaceHeaders(content);
   const cost = meta.estimatedCost?.toFixed(3) || "?";
   const secs = Math.round((meta.totalDurationMs || 0) / 1000);
   const tokens = meta.totalTokens || 0;
