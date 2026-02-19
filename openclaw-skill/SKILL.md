@@ -43,7 +43,13 @@ node {baseDir}/scripts/consensus.mjs --prompt "USER_PROMPT_HERE"
 node {baseDir}/scripts/consensus.mjs --prompt "USER_PROMPT_HERE" --verbose
 ```
 
-3. Parse the JSON output from stdout and present the result to the user.
+3. For direct Telegram delivery (sends ack + analyses + synthesis as separate messages):
+
+```bash
+TELEGRAM_BOT_TOKEN='your-token' node {baseDir}/scripts/consensus.mjs --prompt "USER_PROMPT_HERE" --chatId "TELEGRAM_CHAT_ID"
+```
+
+4. Parse the JSON output from stdout and present the result to the user.
 
 ## Output Format
 
@@ -70,6 +76,8 @@ The script outputs JSON to stdout:
 
 Note: The `analyses` array is only included when `--verbose` is passed.
 
+When `--chatId` is provided with `TELEGRAM_BOT_TOKEN`, results are sent directly to Telegram and stdout returns a minimal status JSON instead.
+
 ## Presenting Results
 
 Format the response like this:
@@ -81,10 +89,27 @@ Format the response like this:
 
 If verbose, show each analyst's response under a "Individual Analyses" heading before the consensus.
 
+## First-Time Setup
+
+When the user runs a consensus command for the first time and `OPENROUTER_API_KEY` is not set, guide them through setup:
+
+1. Tell the user they need an OpenRouter API key to use K-LLM
+2. Direct them to https://openrouter.ai/keys to create one
+3. Once they provide the key, set it in the environment:
+   ```bash
+   # Add to your OpenClaw .env or docker-compose environment:
+   OPENROUTER_API_KEY=sk-or-v1-your-key-here
+   ```
+4. For Telegram direct messaging (optional), also set:
+   ```bash
+   TELEGRAM_BOT_TOKEN=your-bot-token-here
+   ```
+
 ## Requirements
 
 - Node.js 18+
 - `OPENROUTER_API_KEY` environment variable set (get one at https://openrouter.ai/keys)
+- Optional: `TELEGRAM_BOT_TOKEN` for direct Telegram message delivery
 - The script handles all dependencies internally (openai SDK)
 
 ## Error Handling
@@ -94,7 +119,7 @@ If the script exits with a non-zero code, it prints an error JSON to stderr:
 { "error": "Error message here" }
 ```
 
-Present the error to the user and suggest checking their API key.
+If the error is about a missing API key, guide the user through the First-Time Setup above.
 
 ## Timing
 

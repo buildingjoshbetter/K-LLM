@@ -15,7 +15,7 @@
       "description": "Big-picture frameworks, second-order effects, long-term analysis"
     },
     "technician": {
-      "model": "deepseek/deepseek-v3",
+      "model": "deepseek/deepseek-chat",
       "maxTokens": 2000,
       "label": "The Technician",
       "icon": "⚙️",

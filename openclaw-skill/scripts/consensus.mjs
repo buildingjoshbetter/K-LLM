@@ -4,9 +4,14 @@
  * K-LLM Consensus Script for OpenClaw
  *
  * Called by OpenClaw's exec tool with:
- *   node consensus.mjs --prompt "your question" [--verbose]
+ *   node consensus.mjs --prompt "your question" [--chatId 123] [--verbose]
  *
- * Outputs JSON to stdout. Errors go to stderr.
+ * When --chatId is provided, sends formatted messages directly to Telegram:
+ *   1. Ack message (immediate)
+ *   2. Individual analyses (after models complete)
+ *   3. Synthesis (final message)
+ *
+ * Returns minimal JSON to stdout for OpenClaw/DeepSeek.
  */
 
 import { parseArgs } from "node:util";
@@ -20,6 +25,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const { values } = parseArgs({
   options: {
     prompt: { type: "string", short: "p" },
+    chatId: { type: "string" },
     verbose: { type: "boolean", short: "v", default: false },
   },
   strict: false,
@@ -32,30 +38,103 @@ if (!values.prompt) {
 
 const apiKey = process.env.OPENROUTER_API_KEY?.trim();
 if (!apiKey) {
-  console.error(
-    JSON.stringify({
-      error:
-        "OPENROUTER_API_KEY not set. Get a key at https://openrouter.ai/keys",
-    })
-  );
+  console.error(JSON.stringify({ error: "OPENROUTER_API_KEY not set" }));
   process.exit(1);
 }
 
-// Load config from the repo root (one level up from scripts/)
-const configPath = resolve(__dirname, "..", "..", "config.json");
+const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
+const chatId = values.chatId?.trim();
+
+// --- Telegram messaging ---
+async function sendTelegram(text) {
+  if (!botToken || !chatId) return;
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: "Markdown",
+      }),
+    });
+    if (!resp.ok) {
+      // Retry without markdown if formatting fails
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text }),
+      });
+    }
+  } catch (e) {
+    console.error(`[telegram] send failed: ${e.message}`);
+  }
+}
+
+// --- Friendly model names ---
+const MODEL_NAMES = {
+  "anthropic/claude-opus-4-6": "Claude Opus 4.6",
+  "openai/gpt-5.2": "GPT-5.2",
+  "openai/gpt-5.2-pro": "GPT-5.2 Pro",
+  "deepseek/deepseek-chat": "DeepSeek V3",
+  "deepseek/deepseek-v3": "DeepSeek V3",
+  "meta-llama/llama-4-maverick": "Llama 4 Maverick",
+  "google/gemini-2.5-pro": "Gemini 2.5 Pro",
+};
+
+function friendlyModel(modelId) {
+  return MODEL_NAMES[modelId] || modelId.split("/").pop();
+}
+
+// --- Format analyses message ---
+function formatAnalyses(analyses, config) {
+  const lines = ["\u{1F9E0} *K-LLM \u2014 5 Model Perspectives*\n"];
+
+  for (const a of analyses) {
+    const cfg = config.analysts[a.role] || {};
+    const icon = cfg.icon || "\u25AA\uFE0F";
+    const label = cfg.label || a.role;
+    const model = friendlyModel(a.model);
+    const content = a.content?.trim() || "(no response)";
+
+    lines.push(`${icon} *${model}* \u2014 ${label}`);
+    lines.push(`${content}\n`);
+  }
+
+  return lines.join("\n");
+}
+
+// --- Format synthesis message ---
+function formatSynthesis(synthesis, meta) {
+  const content = synthesis.content?.trim() || "(no synthesis)";
+  const cost = meta.estimatedCost?.toFixed(3) || "?";
+  const secs = Math.round((meta.totalDurationMs || 0) / 1000);
+  const tokens = meta.totalTokens || 0;
+
+  return [
+    "\u2728 *Synthesis*\n",
+    content,
+    "",
+    `\u{1F4CA} _5 models \u00B7 ${tokens.toLocaleString()} tokens \u00B7 $${cost} \u00B7 ${secs}s_`,
+  ].join("\n");
+}
+
+// --- Load engine ---
+const configPath = resolve(__dirname, "..", "config.json");
 let config;
 try {
   config = JSON.parse(readFileSync(configPath, "utf-8"));
 } catch {
-  console.error(
-    JSON.stringify({ error: `Cannot load config.json at ${configPath}` })
-  );
-  process.exit(1);
+  // Fallback: try repo root config
+  try {
+    config = JSON.parse(readFileSync(resolve(__dirname, "..", "..", "config.json"), "utf-8"));
+  } catch {
+    console.error(JSON.stringify({ error: `Cannot load config.json` }));
+    process.exit(1);
+  }
 }
 
-// Dynamic imports from the built dist/ directory
-const distRoot = resolve(__dirname, "..", "..", "dist");
-
+const distRoot = resolve(__dirname, "..", "dist");
 let initProvider, runConsensus;
 try {
   const providerMod = await import(resolve(distRoot, "models", "provider.js"));
@@ -63,39 +142,68 @@ try {
   initProvider = providerMod.initProvider;
   runConsensus = pipelineMod.runConsensus;
 } catch (err) {
-  console.error(
-    JSON.stringify({
-      error: `Failed to load K-LLM engine. Run 'npm run build' first. Detail: ${err.message}`,
-    })
-  );
-  process.exit(1);
+  // Fallback: try repo root dist
+  try {
+    const distRoot2 = resolve(__dirname, "..", "..", "dist");
+    const providerMod = await import(resolve(distRoot2, "models", "provider.js"));
+    const pipelineMod = await import(resolve(distRoot2, "engine", "pipeline.js"));
+    initProvider = providerMod.initProvider;
+    runConsensus = pipelineMod.runConsensus;
+  } catch (err2) {
+    console.error(JSON.stringify({ error: `Failed to load K-LLM engine: ${err2.message}` }));
+    process.exit(1);
+  }
 }
 
-// Run consensus
+// --- Run ---
 initProvider(apiKey);
+
+// Send ack immediately
+await sendTelegram(`\u{1F9E0} Running consensus on your question...\n\n_Querying Claude, GPT, DeepSeek, Llama, and Gemini in parallel_`);
 
 try {
   const result = await runConsensus(values.prompt, config);
 
-  const output = {
-    consensus: result.synthesis.content,
-    meta: {
-      totalTokens: result.totalTokens,
-      totalDurationMs: result.totalDurationMs,
-      estimatedCost: result.estimatedCost,
-    },
+  const meta = {
+    totalTokens: result.totalTokens,
+    totalDurationMs: result.totalDurationMs,
+    estimatedCost: result.estimatedCost,
   };
 
-  if (values.verbose) {
-    output.analyses = result.analyses.map((a) => ({
-      role: a.role,
-      label: a.label,
-      model: a.model,
-      content: a.content,
+  // Send analyses message
+  const analysesText = formatAnalyses(result.analyses, config);
+  await sendTelegram(analysesText);
+
+  // Small delay so messages arrive in order
+  await new Promise((r) => setTimeout(r, 500));
+
+  // Send synthesis message
+  const synthesisText = formatSynthesis(result.synthesis, meta);
+  await sendTelegram(synthesisText);
+
+  // If Telegram was used, return minimal result so the host model doesn't repeat everything
+  if (botToken && chatId) {
+    console.log(JSON.stringify({
+      status: "done",
+      note: "Consensus results already sent to user via Telegram. Do NOT repeat or summarize them. Reply with just: NO_REPLY",
     }));
+  } else {
+    // No Telegram — output full result to stdout
+    const output = {
+      consensus: result.synthesis.content,
+      meta,
+    };
+    if (values.verbose) {
+      output.analyses = result.analyses.map((a) => ({
+        role: a.role,
+        label: a.label,
+        model: a.model,
+        content: a.content,
+      }));
+    }
+    console.log(JSON.stringify(output, null, 2));
   }
 
-  console.log(JSON.stringify(output, null, 2));
 } catch (err) {
   console.error(JSON.stringify({ error: err.message || String(err) }));
   process.exit(1);
